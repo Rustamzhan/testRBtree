@@ -1,0 +1,30 @@
+body {
+    width: 100vw;
+    margin: 0;
+    background-color: burlywood;
+    position: relative;
+    display: inline-block;
+}
+
+h1{
+    font-size: 30px;
+    background-color: brown;
+    margin: 0;
+    width: 100vw;
+    padding: 0;
+}
+
+form {
+    background-color: aquamarine;
+    margin: 0;
+    padding: 10px;
+}
+
+.input_place{
+    margin-left: 1vw;
+    float: left;
+}
+
+.btn {
+    float: none;
+}
