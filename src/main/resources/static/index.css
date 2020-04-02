@@ -25,6 +25,6 @@ form {
     float: left;
 }
 
-.btn {
-    float: none;
+.input-append {
+    display: flex;
 }

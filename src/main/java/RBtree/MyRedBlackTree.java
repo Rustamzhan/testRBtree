@@ -1,12 +1,15 @@
 package RBtree;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.awt.*;
+import java.io.Serializable;
 
-public class MyRedBlackTree {
+@JsonAutoDetect
+public class MyRedBlackTree implements Serializable {
     private static MyRedBlackTree instance = new MyRedBlackTree();
     private RBTreeNode root;
+
 
     private MyRedBlackTree() { }
 
@@ -14,34 +17,17 @@ public class MyRedBlackTree {
         return instance;
     }
 
+
     public RBTreeNode getRoot() {
         return root;
     }
-    @JsonIgnore
-    public RBTreeNode findNode(int value) {
-        RBTreeNode tmp;
 
-        tmp = this.root;
-        while (tmp != null && tmp.getValue() != value) {
-            if (tmp.getValue() > value)
-                tmp = tmp.getLeft();
-            else
-                tmp = tmp.getRight();
-        }
-        if (tmp.getValue() == value)
-            return null;
-        return tmp;
-    }
     @JsonIgnore
     public void addNode(int value) {
-        RBTreeNode current;
-        RBTreeNode parent;
-        RBTreeNode newNode;
+        RBTreeNode current = this.root;
+        RBTreeNode parent = this.root;
+        RBTreeNode newNode = new RBTreeNode(value);
 
-        newNode = new RBTreeNode(value);
-
-        current = this.root;
-        parent = this.root;
         while (current != null) {
             parent = current;
             current = (value < current.getValue()) ?
@@ -54,56 +40,12 @@ public class MyRedBlackTree {
                 parent.setLeft(newNode);
             else
                 parent.setRight(newNode);
+            newNode.setParent(parent);
         }
         balanceTree(newNode);
     }
 
-    private void rightRotate(RBTreeNode parent) {
-        RBTreeNode node;
-        RBTreeNode grFather;
-
-        node = parent.getLeft();
-        grFather = node.getGrParent();
-
-        grFather.setLeft(parent.getRight());
-        parent.setParent(grFather.getParent());
-        parent.setRight(grFather);
-
-        node = parent;
-        parent = node.getParent();
-        if (parent != null) {
-            if (parent.getLeft() == grFather)
-                parent.setLeft(node);
-            else
-                parent.setRight(node);
-        }
-        else
-            this.root = node;
-    }
-
-    private void leftRotate(RBTreeNode parent) {
-        RBTreeNode node;
-        RBTreeNode grFather;
-
-        node = parent.getRight();
-        grFather = node.getGrParent();
-
-        parent.setParent(grFather.getParent());
-        grFather.setRight(parent.getLeft());
-        parent.setLeft(grFather);
-
-        node = parent;
-        parent = node.getParent();
-        if (parent != null) {
-            if (parent.getLeft() == grFather)
-                parent.setLeft(node);
-            else
-                parent.setRight(node);
-        }
-        else
-            this.root = node;
-    }
-
+    @JsonIgnore
     private void balanceTree(RBTreeNode node) {
         RBTreeNode uncle;
         RBTreeNode grFather;
@@ -123,36 +65,101 @@ public class MyRedBlackTree {
             }
             else if (parent == grFather.getLeft()) {
                 if (node == parent.getRight()) {
-                    leftRotate(parent);
-                    node.setColor(Color.BLACK);
-                    node.getParent().setColor(Color.RED);
+                    shortLeftRotate(node);
                     parent = node;
-                }
-                else {
-                    parent.setColor(Color.BLACK);
-                    grFather.setColor(Color.RED);
                 }
                 rightRotate(parent);
                 node = parent;
             }
             else {
                 if (node == parent.getLeft()) {
-                    rightRotate(parent);
-                    node.setColor(Color.BLACK);
-                    node.getParent().setColor(Color.RED);
+                    shortRightRotate(parent);
                     parent = node;
-                }
-                else {
-                    parent.setColor(Color.BLACK);
-                    grFather.setColor(Color.RED);
                 }
                 leftRotate(parent);
                 node = parent;
             }
+            parent.setColor(Color.BLACK);
+            grFather.setColor(Color.RED);
         }
         this.root.setColor(Color.BLACK);
     }
 
+    @JsonIgnore
+    private void shortRightRotate(RBTreeNode parent) {
+        RBTreeNode grParent = parent.getParent();
+        RBTreeNode node = parent.getLeft();
+
+        grParent.setRight(node);
+        parent.setLeft(node.getRight());
+        parent.setParent(node);
+        node.setRight(parent);
+        node.setParent(grParent);
+    }
+
+    @JsonIgnore
+    private void shortLeftRotate(RBTreeNode parent) {
+        RBTreeNode grParent = parent.getParent();
+        RBTreeNode node = parent.getRight();
+
+        grParent.setLeft(node);
+        parent.setRight(node.getLeft());
+        parent.setParent(node);
+        node.setLeft(parent);
+        node.setParent(grParent);
+    }
+
+    @JsonIgnore
+    private void rightRotate(RBTreeNode parent) {
+        RBTreeNode node = parent.getLeft();
+        RBTreeNode brother = parent.getRight();
+        RBTreeNode grFather = node.getGrParent();
+
+        parent.setParent(grFather.getParent());
+        grFather.setLeft(brother);
+        if (brother != null)
+            brother.setParent(grFather);
+        if (grFather.getRight() == parent)
+            grFather.setRight(null);
+        parent.setRight(grFather);
+        grFather.setParent(parent);
+
+        relinkParentToGrParent(parent, grFather);
+    }
+
+    @JsonIgnore
+    private void leftRotate(RBTreeNode parent) {
+        RBTreeNode node = parent.getRight();
+        RBTreeNode grFather = node.getGrParent();
+        RBTreeNode brother = parent.getLeft();
+
+        parent.setParent(grFather.getParent());
+        grFather.setRight(brother);
+        if (brother != null)
+            brother.setParent(grFather);
+        if (grFather.getLeft() == parent)
+            grFather.setLeft(null);
+        parent.setLeft(grFather);
+        grFather.setParent(parent);
+
+        relinkParentToGrParent(parent, grFather);
+    }
+
+    @JsonIgnore
+    private void relinkParentToGrParent(RBTreeNode node, RBTreeNode grFather) {
+        RBTreeNode parent = node.getParent();
+
+        if (parent != null) {
+            if (parent.getLeft() == grFather)
+                parent.setLeft(node);
+            else
+                parent.setRight(node);
+        }
+        else
+            this.root = node;
+    }
+
+    @JsonIgnore
     private void balanceTreeAfterDelete(RBTreeNode node, RBTreeNode replacedNode) {
         RBTreeNode brother;
         RBTreeNode leftSon;
@@ -234,42 +241,36 @@ public class MyRedBlackTree {
             }
         }
     }
-    @JsonIgnore
-    private RBTreeNode findNextValue(RBTreeNode node) {
-        RBTreeNode tmp;
 
-        tmp = node.getLeft();
-        while (tmp.getRight() != null)
-            tmp = tmp.getRight();
+    @JsonIgnore
+    public void deleteNode(int value) {
+        RBTreeNode node = findNode(value);
+
+        if (node == null)
+            return ;
+        delete(node);
+    }
+
+    @JsonIgnore
+    public RBTreeNode findNode(int value) {
+        RBTreeNode tmp = this.root;
+
+        while (tmp != null && tmp.getValue() != value) {
+            if (tmp.getValue() > value)
+                tmp = tmp.getLeft();
+            else
+                tmp = tmp.getRight();
+        }
         return tmp;
     }
-    @JsonIgnore
-    private RBTreeNode replaceOneChild(RBTreeNode node, RBTreeNode replaceChild) {
-        RBTreeNode parent;
 
-        parent = node.getParent();
-        if (parent == null) {
-            this.root = replaceChild;
-            if (this.root != null)
-                this.root.setColor(Color.BLACK);
-            return replaceChild;
-        }
-        if (parent.getLeft() == node)
-            parent.setLeft(replaceChild);
-        else
-            parent.setRight(replaceChild);
-        return replaceChild;
-    }
     @JsonIgnore
     private void delete(RBTreeNode node) {
-        RBTreeNode leftSon;
-        RBTreeNode rightSon;
-        RBTreeNode parent;
+        RBTreeNode leftSon = node.getLeft();;
+        RBTreeNode rightSon  = node.getRight();
+        RBTreeNode parent = node.getParent();;
         RBTreeNode replaceChild;
 
-        parent = node.getParent();
-        leftSon = node.getLeft();
-        rightSon = node.getRight();
         if (leftSon != null && rightSon != null){
             replaceChild = findNextValue(node);
             node.setValue(replaceChild.getValue());
@@ -294,13 +295,30 @@ public class MyRedBlackTree {
         else if (node.isBlack() && this.root != replaceChild)
             balanceTreeAfterDelete(parent, replaceChild);
     }
-    @JsonIgnore
-    public void deleteNode(int value) {
-        RBTreeNode node;
 
-        node = findNode(value);
-        if (node == null)
-            return ;
-        delete(node);
+    @JsonIgnore
+    private RBTreeNode findNextValue(RBTreeNode node) {
+        RBTreeNode tmp = node.getLeft();
+
+        while (tmp.getRight() != null)
+            tmp = tmp.getRight();
+        return tmp;
+    }
+
+    @JsonIgnore
+    private RBTreeNode replaceOneChild(RBTreeNode node, RBTreeNode replaceChild) {
+        RBTreeNode parent  = node.getParent();
+
+        if (parent == null) {
+            this.root = replaceChild;
+            if (this.root != null)
+                this.root.setColor(Color.BLACK);
+            return replaceChild;
+        }
+        if (parent.getLeft() == node)
+            parent.setLeft(replaceChild);
+        else
+            parent.setRight(replaceChild);
+        return replaceChild;
     }
 }

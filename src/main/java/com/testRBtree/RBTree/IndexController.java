@@ -1,20 +1,23 @@
 package com.testRBtree.RBTree;
 
 import RBtree.MyRedBlackTree;
+import RBtree.RBTreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 
 @RestController
 public class IndexController {
 
     MyRedBlackTree tree = MyRedBlackTree.getInstance();
-    ObjectMapper mapper = new ObjectMapper();
 
     @RequestMapping("/")
     public ModelAndView index() {
@@ -24,22 +27,37 @@ public class IndexController {
         return new ModelAndView("index", model);
     }
 
-    @RequestMapping(value = "/jsonListener", method = RequestMethod.POST)
-    public String jsonSender(HttpServletRequest request) {
-        String jsonResponse;
-        try{
-            InputStream in = request.getInputStream();
-            Scanner s = new Scanner(in);
-            String data = s.next();
-            Map map = new Gson().fromJson(data, Map.class);
-            int val = Integer.parseInt(map.get("value").toString());
-            tree.addNode(val);
-            jsonResponse = mapper.writeValueAsString(tree.getRoot());
-            return jsonResponse;
+    @PostMapping(value = "/jsonListener")
+    public ResponseEntity<?> jsonSender(@RequestBody String request) {
+        ObjectMapper mapper = new ObjectMapper();
+        int value = Integer.parseInt(request.split("\"")[3]);
+        synchronized (tree) {
+            tree.addNode(value);
         }
-        catch (Exception ex) {
-            System.out.println(ex.getMessage());
-            return null;
+        String result = "";
+        try (StringWriter writer = new StringWriter()) {
+            mapper.writeValue(writer, tree);
+            result = writer.toString();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/jsonListener/del")
+    public ResponseEntity<?> jsonSenderDel(@RequestBody String request) {
+        ObjectMapper mapper = new ObjectMapper();
+        int value = Integer.parseInt(request.split("\"")[3]);
+        synchronized (tree) {
+            tree.deleteNode(value);
+        }
+        String result = "";
+        try (StringWriter writer = new StringWriter()) {
+            mapper.writeValue(writer, tree);
+            result = writer.toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 }

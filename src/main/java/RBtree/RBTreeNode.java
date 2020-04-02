@@ -2,23 +2,28 @@ package RBtree;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.awt.*;
-
-@JsonPropertyOrder({ "value", "left", "right", "parent" })
-public class RBTreeNode {
+import java.io.Serializable;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class RBTreeNode implements Serializable {
     private RBTreeNode  parent;
-    @JsonIgnoreProperties("parent")
+    @JsonProperty("right")
     private RBTreeNode  right;
-    @JsonIgnoreProperties("parent")
+    @JsonProperty("left")
     private RBTreeNode  left;
 
+    @JsonProperty("value")
     private int         value;
+    @JsonProperty("x")
     private int         x;
+    @JsonProperty("y")
     private int         y;
+    @JsonProperty("lvl")
     private int         lvl;
-    @JsonIgnore
+    @JsonProperty("Color")
     private Color       color;
 
     RBTreeNode(int value) {
@@ -68,22 +73,25 @@ public class RBTreeNode {
         return parent;
     }
 
+    @JsonIgnore
     void setRight(RBTreeNode right) {
         this.right = right;
         if (right != null)
             this.right.parent = this;
     }
 
+    @JsonIgnore
     public RBTreeNode getRight() {
         return right;
     }
-
+    @JsonIgnore
     void setLeft(RBTreeNode left) {
         this.left = left;
         if (left != null)
             this.left.parent = this;
     }
 
+    @JsonIgnore
     public RBTreeNode getLeft() {
         return left;
     }
@@ -91,13 +99,14 @@ public class RBTreeNode {
     @JsonIgnore
     public RBTreeNode getGrParent(){
         if (this.parent != null)
-            return this.parent.parent;
+            return this.parent.getParent();
         return null;
     }
 
     @JsonIgnore
     public RBTreeNode getUncle() {
         RBTreeNode grParent = this.getGrParent();
+
         if (this.parent != null && grParent != null)
         {
             if (grParent.getLeft() == this.parent)

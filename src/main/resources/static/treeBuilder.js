@@ -1,12 +1,13 @@
 function drawCanvas(tree) {
-    console.log(tree);
+    // console.log(tree);
+    let root = tree.root;
     let curNode;
     let temp = 640;
     let arr = [];
-    tree.lvl = 2;
-    arr.push(tree);
-    tree.x = 630;
-    tree.y = 10;
+    root.lvl = 2;
+    arr.push(root);
+    root.x = 630;
+    root.y = 10;
     let example = document.getElementById("paintField");
     let ctx = example.getContext('2d');
     ctx.clearRect(0,0, 1600, 1000);
@@ -14,6 +15,7 @@ function drawCanvas(tree) {
     while (arr.length > 0)
     {
         curNode = arr.shift();
+        console.log(curNode);
         temp = 280 / curNode.lvl;
         if (curNode.red == true) {
             ctx.fillStyle = 'RED';
@@ -54,14 +56,16 @@ function drawCanvas(tree) {
 function sendPost_add() {
     let value = document.querySelector("input");
     buttonElement.style.display = 'none';
-    if (value.value == "")
+    if (value.value == ""){
+        buttonElement.style.display = 'block';
+        button2Element.style.display = 'block';
         return;
+    }
     let num = value.value;
     fetch('http://localhost:8080/jsonListener', {
         method: 'post',
         body: JSON.stringify({
-            value:num,
-            act: "add",
+            value:num
         })
     }).then(function(response) {
         if(response.ok) {
@@ -76,6 +80,41 @@ function sendPost_add() {
     buttonElement.style.display = 'block';
 }
 
+function sendPost_del() {
+    let value = document.querySelector("input");
+    buttonElement.style.display = 'none';
+    button2Element.style.display = 'none';
+    if (value.value == "") {
+        buttonElement.style.display = 'block';
+        button2Element.style.display = 'block';
+        return;
+    }
+    let num = value.value;
+    fetch('http://localhost:8080/jsonListener/del', {
+        method: 'post',
+        body: JSON.stringify({
+            value:num
+        })
+    }).then(function(response) {
+        if(response.ok) {
+            response.json().then(function(data) {
+                drawCanvas(data);
+            });
+        } else {
+            console.log('Network request for products.json failed with response ' + response.status + ': ' + response.statusText);
+        }
+    });
+    value.value = "";
+    buttonElement.style.display = 'block';
+    button2Element.style.display = 'block';
+}
 
 const buttonElement = document.getElementById('btn');
 buttonElement.addEventListener('click', sendPost_add);
+const inputPush = document.getElementById('number');
+inputPush.addEventListener('keydown', (e) => {
+    if (e.key == "Enter")
+        sendPost_add();
+});
+const button2Element = document.getElementById('butn');
+button2Element.addEventListener('click', sendPost_del);
